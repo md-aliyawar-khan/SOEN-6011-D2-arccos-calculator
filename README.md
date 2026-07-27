@@ -42,7 +42,7 @@ The arcsin(x) value is calculated using a Taylor-series recurrence.
 Clone the repository:
 
 ```bash
-git clone https://github.com/YOUR-GITHUB-USERNAME/SOEN-6011-D2-arccos-calculator.git
+git clone https://github.com/md-aliyawar-khan/SOEN-6011-D2-arccos-calculator.git
 ```
 
 Open the project directory:
