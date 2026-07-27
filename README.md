@@ -1,5 +1,5 @@
-# SOEN 6011 — Deliverable 2
-## F1: arccos(x) Calculator
+SOEN 6011 — Deliverable 2
+F1: arccos(x) Calculator
 
 **Student:** Mohammad Aliyawar Khan  
 **Student ID:** 40309082  
@@ -74,7 +74,7 @@ The program uses `float()` only to convert text entered into the Tkinter input f
 ## Test Cases
 
 | Input | Expected behavior |
-|---|---|
+| --- | --- |
 | `0.5` | Displays approximately `1.0471975512` radians |
 | `0` | Displays approximately `1.5707963268` radians |
 | `1` | Displays `0.0000000000` radians |
@@ -95,4 +95,4 @@ The application handles:
 
 ## Repository URL
 
-https://github.com/md-aliyawar-khan/SOEN-6011-D2-arccos-calculator
+<https://github.com/md-aliyawar-khan/SOEN-6011-D2-arccos-calculator>
