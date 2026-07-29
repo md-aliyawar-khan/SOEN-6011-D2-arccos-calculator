@@ -2,10 +2,17 @@
 SOEN 6011 - Deliverable 2
 Problem 5: From-Scratch arccos(x) Tkinter GUI
 
-The program calculates arccos(x) in radians using:
-arccos(x) = pi / 2 - arcsin(x)
+The program calculates arccos(x) in radians using a Taylor series
+with range reduction near the endpoints.
 
-arcsin(x) is computed with a Taylor-series recurrence.
+For x >= 0:
+arccos(x) = 2 * arcsin(sqrt((1 - x) / 2))
+
+For x < 0:
+arccos(x) = pi - arccos(-x)
+
+arcsin(x) is computed using a Taylor-series recurrence.
+The square root is computed using Newton's method.
 No math library or built-in inverse-trigonometric function is used.
 """
 
@@ -15,6 +22,9 @@ import tkinter as tk
 PI = 3.141592653589793
 TOLERANCE = 1e-10
 MAX_ITERATIONS = 1000
+SQRT_TOLERANCE = 1e-14
+SQRT_MAX_ITERATIONS = 100
+MAX_FINITE_MAGNITUDE = 1e308
 
 
 class InputValidationError(Exception):
@@ -22,58 +32,88 @@ class InputValidationError(Exception):
 
 
 class ConvergenceError(Exception):
-    """Raised when the Taylor series fails to converge."""
+    """Raised when a numerical method fails to converge."""
 
 
 def absolute_value(value):
     """Return the absolute value without using abs()."""
-    if value < 0:
+    if value < 0.0:
         return -value
     return value
 
 
 def is_finite_number(value):
-    """Return True only if value is not NaN, inf, or -inf."""
+    """
+    Return True only if value is finite.
+
+    NaN is rejected because NaN is not equal to itself.
+    Extremely large values are rejected without using float("inf").
+    """
     if value != value:
         return False
 
-    if value == float("inf") or value == float("-inf"):
+    if absolute_value(value) > MAX_FINITE_MAGNITUDE:
         return False
 
     return True
+
+
+def calculate_square_root(value):
+    """
+    Calculate sqrt(value) with Newton's method.
+
+    Precondition: value is finite and value >= 0.
+    """
+    if value < 0.0:
+        raise InputValidationError(
+            "Square root input must be greater than or equal to zero."
+        )
+
+    if value == 0.0:
+        return 0.0
+
+    guess = 1.0
+    iteration = 0
+
+    while iteration < SQRT_MAX_ITERATIONS:
+        next_guess = 0.5 * (guess + value / guess)
+
+        if absolute_value(next_guess - guess) <= SQRT_TOLERANCE:
+            return next_guess
+
+        guess = next_guess
+        iteration = iteration + 1
+
+    raise ConvergenceError(
+        "Square-root calculation did not converge within "
+        + str(SQRT_MAX_ITERATIONS)
+        + " iterations."
+    )
 
 
 def calculate_arcsin(x):
     """
     Calculate arcsin(x) with a Taylor-series recurrence.
 
+    The function is used only with a reduced input magnitude,
+    improving convergence near arccos endpoints.
     Precondition: x is finite and belongs to [-1, 1].
     """
-    if x == 1.0:
-        return PI / 2.0
-
-    if x == -1.0:
-        return -PI / 2.0
+    if x == 0.0:
+        return 0.0
 
     result = 0.0
     coefficient = 1.0
     power = x
     iteration = 0
 
-    while True:
+    while iteration < MAX_ITERATIONS:
         term = coefficient * power
+        result = result + term
 
         if absolute_value(term) <= TOLERANCE:
             return result
 
-        if iteration >= MAX_ITERATIONS:
-            raise ConvergenceError(
-                "Calculation did not converge within "
-                + str(MAX_ITERATIONS)
-                + " iterations."
-            )
-
-        result = result + term
         iteration = iteration + 1
 
         coefficient = (
@@ -85,16 +125,23 @@ def calculate_arcsin(x):
 
         power = power * x * x
 
+    raise ConvergenceError(
+        "Taylor-series calculation did not converge within "
+        + str(MAX_ITERATIONS)
+        + " iterations."
+    )
+
 
 def calculate_arccos(x):
     """
     Calculate arccos(x) in radians.
 
     The result belongs to the principal range [0, pi].
+    Range reduction improves Taylor-series convergence near x = -1 and x = 1.
     """
     if not is_finite_number(x):
         raise InputValidationError(
-            "Enter a finite number. Values such as nan and inf are not allowed."
+            "Enter a finite number. Values such as nan are not allowed."
         )
 
     if x < -1.0 or x > 1.0:
@@ -108,7 +155,11 @@ def calculate_arccos(x):
     if x == -1.0:
         return PI
 
-    return (PI / 2.0) - calculate_arcsin(x)
+    if x < 0.0:
+        return PI - calculate_arccos(-x)
+
+    reduced_input = calculate_square_root((1.0 - x) / 2.0)
+    return 2.0 * calculate_arcsin(reduced_input)
 
 
 class ArccosCalculatorGUI:
@@ -232,7 +283,7 @@ class ArccosCalculatorGUI:
             return
 
         try:
-            # Used only for conversion of text entered in the GUI.
+            # Used only to convert GUI text into a numeric value.
             value = float(input_text)
             result = calculate_arccos(value)
 
